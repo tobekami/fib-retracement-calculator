@@ -25,6 +25,13 @@ const FibRetracementCalculator = () => {
     }
   }, [inputs, focusedField]);
 
+  // Determine if this is a long or short position
+  const getPositionType = (entryPrice, stopLoss) => {
+    if (stopLoss > entryPrice) return 'short';
+    if (stopLoss < entryPrice) return 'long';
+    return 'unknown';
+  };
+
   // Validation function
   const validateInputs = (inputValues) => {
     const newErrors = {};
@@ -53,22 +60,30 @@ const FibRetracementCalculator = () => {
       newErrors.tpPrice = "Take profit price must be greater than 0";
     }
     
-    // Logical validations for short positions
+    // Position-specific validations
     if (inputValues.entryPrice > 0 && inputValues.stopLoss > 0) {
-      if (inputValues.stopLoss <= inputValues.entryPrice) {
-        newErrors.stopLoss = "For short positions, stop loss must be above entry price";
-      }
-    }
-    
-    if (inputValues.entryPrice > 0 && inputValues.tpPrice > 0) {
-      if (inputValues.tpPrice >= inputValues.entryPrice) {
-        newErrors.tpPrice = "For short positions, take profit must be below entry price";
-      }
-    }
-    
-    if (inputValues.entryPrice > 0 && inputValues.level1Price > 0) {
-      if (inputValues.level1Price >= inputValues.entryPrice) {
-        newErrors.level1Price = "Level 1 price should be below entry price for short positions";
+      const positionType = getPositionType(inputValues.entryPrice, inputValues.stopLoss);
+      
+      if (positionType === 'unknown') {
+        newErrors.stopLoss = "Stop loss cannot equal entry price";
+      } else if (positionType === 'long') {
+        // Long position validations
+        if (inputValues.tpPrice > 0 && inputValues.tpPrice <= inputValues.entryPrice) {
+          newErrors.tpPrice = "For long positions, take profit must be above entry price";
+        }
+        
+        if (inputValues.level1Price > 0 && inputValues.level1Price <= inputValues.entryPrice) {
+          newErrors.level1Price = "For long positions, level 1 price should be above entry price";
+        }
+      } else if (positionType === 'short') {
+        // Short position validations
+        if (inputValues.tpPrice > 0 && inputValues.tpPrice >= inputValues.entryPrice) {
+          newErrors.tpPrice = "For short positions, take profit must be below entry price";
+        }
+        
+        if (inputValues.level1Price > 0 && inputValues.level1Price >= inputValues.entryPrice) {
+          newErrors.level1Price = "For short positions, level 1 price should be below entry price";
+        }
       }
     }
 
@@ -83,6 +98,7 @@ const FibRetracementCalculator = () => {
     if (Object.keys(validationErrors).length > 0) {
       return {
         hasErrors: true,
+        positionType: 'unknown',
         riskDollars: 0,
         entry1Price: 0,
         entry2Price: 0,
@@ -124,13 +140,25 @@ const FibRetracementCalculator = () => {
     } = inputs;
 
     try {
+      // Determine position type
+      const positionType = getPositionType(entryPrice, stopLoss);
+      
       // 1. Risk Dollars
       const riskDollars = accountSize * (riskPercent / 100);
 
       // 2. Entry Prices (Fixed fibonacci ratios)
       const entry1Price = entryPrice;
-      const entry2Price = entryPrice + (stopLoss - entryPrice) * 0.382; // 38.2% retracement
-      const entry3Price = entryPrice + (stopLoss - entryPrice) * 0.618; // 61.8% retracement
+      let entry2Price, entry3Price;
+      
+      if (positionType === 'long') {
+        // For long positions, we add downward retracements
+        entry2Price = entryPrice - Math.abs(entryPrice - stopLoss) * 0.382; // 38.2% retracement
+        entry3Price = entryPrice - Math.abs(entryPrice - stopLoss) * 0.618; // 61.8% retracement
+      } else {
+        // For short positions, we add upward retracements
+        entry2Price = entryPrice + Math.abs(stopLoss - entryPrice) * 0.382; // 38.2% retracement
+        entry3Price = entryPrice + Math.abs(stopLoss - entryPrice) * 0.618; // 61.8% retracement
+      }
 
       // 3. Weighted Average Entry (1:3:5 ratio)
       const weightedEntry = (entry1Price * 1 + entry2Price * 3 + entry3Price * 5) / 9;
@@ -187,6 +215,7 @@ const FibRetracementCalculator = () => {
 
       return {
         hasErrors: false,
+        positionType,
         riskDollars,
         entry1Price,
         entry2Price,
@@ -218,7 +247,7 @@ const FibRetracementCalculator = () => {
       };
     } catch (error) {
       console.error('Calculation error:', error);
-      return { hasErrors: true };
+      return { hasErrors: true, positionType: 'unknown' };
     }
   }, [inputs]);
 
@@ -231,6 +260,32 @@ const FibRetracementCalculator = () => {
   };
 
   const resetToDefaults = () => {
+    setInputs({
+      accountSize: 10000,
+      riskPercent: 2,
+      entryPrice: 150.00,
+      stopLoss: 145.00,
+      level1Price: 155.00,
+      tpPrice: 160.00
+    });
+    setErrors({});
+    setFocusedField(null);
+  };
+
+  const setLongExample = () => {
+    setInputs({
+      accountSize: 10000,
+      riskPercent: 2,
+      entryPrice: 150.00,
+      stopLoss: 145.00,
+      level1Price: 155.00,
+      tpPrice: 160.00
+    });
+    setErrors({});
+    setFocusedField(null);
+  };
+
+  const setShortExample = () => {
     setInputs({
       accountSize: 10000,
       riskPercent: 2,
@@ -296,6 +351,7 @@ const FibRetracementCalculator = () => {
       )}
     </div>
   );
+
 
   return (
     <div className="max-w-7xl mx-auto p-4 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
