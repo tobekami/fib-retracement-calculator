@@ -304,7 +304,7 @@ const FibRetracementCalculator = () => {
           <div className="flex items-center gap-3">
             <Calculator className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              Fibonacci Retracement Position Size Calculator
+              TCL MAX - Fibonacci Retracement Position Size Calculator
             </h1>
           </div>
           <div className="flex gap-2">
