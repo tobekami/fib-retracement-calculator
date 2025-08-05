@@ -300,14 +300,17 @@ const FibRetracementCalculator = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Calculator className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              TCL MAX - Fibonacci Retracement Position Size Calculator
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4 sm:gap-0">
+        {/* Left side: Icon + Title */}
+          <div className="flex items-center gap-2 min-w-0">
+            <Calculator className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+            <h1 className="text-3xl font-bold text-gray-800">
+              TCL MAX - Position Size Calculator
             </h1>
           </div>
-          <div className="flex gap-2">
+      
+        {/* Right side: Buttons */}
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm"
@@ -323,7 +326,8 @@ const FibRetracementCalculator = () => {
               Reset
             </button>
           </div>
-        </div>
+      </div>
+    
 
         {/* Input Section */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
